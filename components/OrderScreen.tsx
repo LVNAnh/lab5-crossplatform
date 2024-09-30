@@ -56,17 +56,26 @@ const OrderScreen = ({ route, navigation }: { route: OrderScreenRouteProp; navig
       }
     };
 
-    fetchProductDetails();
-
     const fetchCart = async () => {
       try {
-        const response = await axios.get('https://66f55e039aa4891f2a24f7c0.mockapi.io/cart/1'); 
-        setCart(response.data); 
+        const storedUser = await AsyncStorage.getItem('user');
+        const user = storedUser ? JSON.parse(storedUser) : null;
+        const user_id = user?.id;
+
+        if (!user_id) {
+          console.error('User not logged in');
+          return;
+        }
+
+        const response = await axios.get(`https://66f55e039aa4891f2a24f7c0.mockapi.io/cart?user_id=${user_id}`);
+        const cartData = response.data[0]; // Giả sử API trả về một mảng, bạn sẽ lấy phần tử đầu tiên.
+        setCart(cartData);
       } catch (error) {
         console.error('Error fetching cart:', error);
       }
     };
 
+    fetchProductDetails();
     fetchCart();
   }, [cartItems]);
 
@@ -98,6 +107,7 @@ const OrderScreen = ({ route, navigation }: { route: OrderScreenRouteProp; navig
         alert('Đặt hàng thành công');
   
         if (cart && cart.id) {
+          // Sử dụng cart.id để xóa giỏ hàng
           const deleteResponse = await axios.delete(`https://66f55e039aa4891f2a24f7c0.mockapi.io/cart/${cart.id}`);
           
           if (deleteResponse.status === 200) {
@@ -152,7 +162,7 @@ const OrderScreen = ({ route, navigation }: { route: OrderScreenRouteProp; navig
       )}
 
       <View style={styles.summaryContainer}>
-      <Text style={styles.summaryText}>Tổng giá: {formatCurrencyVND(totalAmount)}</Text>
+        <Text style={styles.summaryText}>Tổng giá: {formatCurrencyVND(totalAmount)}</Text>
       </View>
 
       <Button title="Xác nhận và đặt hàng" onPress={handlePlaceOrder} />
